@@ -7,5 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Dimava",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "adm-zip": "^0.5.1",
+    "pica": "^6.1.1",
+    "sharp": "^0.27.0",
+    "yaml": "^1.10.0"
+  }
 }

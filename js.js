@@ -15,10 +15,11 @@ window.__init__fn = function(window) {
 	defineValue(Object, defineGetter)
 	defineValue(Object, defineValue)
 
-	function defineGetter(o, name, get = name) {
+	function defineGetter(o, name, get = name, enumerable = false) {
 		if (typeof name == 'function')
 			name = name.name
 		return Object.defineProperty(o, name, {
+			enumerable,
 			configurable: true,
 			get
 		})
@@ -158,7 +159,7 @@ window.__init__fn = function(window) {
 	})
 
 	Object.defineValue(fetch, async function jsonAs(name, url) {
-		let r = await fetch(url, {credentials: 'include'})
+		let r = await fetch(url, { credentials: 'include' })
 		let j = await r.json()
 		return window[name] = j
 	})
@@ -204,9 +205,9 @@ window.__init__fn = function(window) {
 			'')))
 
 		sel = sel.replace(/\[(.*?)=(".*?"|'.*?'|.*?)\]/g, (s, attr, val) => (attrs.push({
-				attr,
-				val
-			}),
+			attr,
+			val
+		}),
 			''))
 
 		sel = sel.replace(/\.([\w\-]+)/g, (s, cl) => (cls.push(cl),
@@ -322,6 +323,20 @@ window.__init__fn = function(window) {
 			fs.rmdirSync(folder)
 		}
 
+		fs.json = function(p, o) {
+			let exists = fs.existsSync(p);
+			if (o) {
+				fs.writeFileSync(p, JSON.stringify(o));
+				return !exists;
+			} else {
+				return !exists ? undefined : JSON.parse(fs.readFileSync(p, 'utf-8'))
+			}
+		}
+
+		fs.load_json = function(p) {
+			return fs.json(p);
+		}
+
 		window.setProgress = function(i = -1, a = []) {
 			let p = w.q('progress') || elm('progress').appendTo('body')
 			p.max = a.length
@@ -331,6 +346,12 @@ window.__init__fn = function(window) {
 			return true
 		}
 
+	} else {
+		window.fs = {
+			async load_json(p) {
+				return fetch(p).then(e=>e.json());
+			}
+		}
 	}
 }
 
@@ -362,3 +383,82 @@ __init__;
 
 
 
+
+''.hashCode || Object.defineProperty(String.prototype, 'hashCode', {
+	value: function() {
+		var hash = 0, i, chr;
+		for (i = 0; i < this.length; i++) {
+			chr = this.charCodeAt(i);
+			hash = ((hash << 5) - hash) + chr;
+			hash |= 0; // Convert to 32bit integer
+		}
+		return hash;
+	}
+});
+
+
+
+
+function dig(o, fn, path = []) {
+	for (let k in o) {
+		path.push(k)
+
+		if (typeof (o[k]) == 'object') {
+			dig(o[k], fn, path)
+		}
+
+		fn(o, k, o[k], path)
+
+		path.pop()
+	}
+}
+
+
+HTMLCanvasElement.prototype.save = async function(path) {
+	let p = Promise.empty();
+	this.toBlob(p.r);
+	let blob = await p.p;
+	p = Promise.empty();
+	ab = await new Response(blob).arrayBuffer();
+	fs.writeFileSync(path, Buffer(ab));
+
+}
+
+
+
+myfns = {};
+
+
+if (globalThis.nw)
+yaml = require('yaml')
+
+Object.defineValue(Object.prototype, function _values() { return Object.values(this) })
+Object.defineValue(Array.prototype, function _unique(value) {
+	if (typeof value == 'undefined') {
+		return [...new Set(this)];
+	}
+	let fn;
+	if (typeof value == 'string') {
+		let str = value;
+		fn = e => e[str];
+	}
+	if (typeof value == 'function') {
+		fn = value;
+	}
+	if (fn) {
+		let set = new Set();
+		return this.filter(e => { let v = fn(e); if (set.has(v)) return false; set.add(v); return true; })
+	}
+	throw 'bad value';
+})
+
+Object.defineValue(Map.prototype, function _values() { return [...this.values()] })
+
+function assert(truthy, messsage, data) {
+	if (!truthy) {
+		if (data) {
+			console.error(data)
+		}
+		throw new Error(messsage);
+	}
+}
