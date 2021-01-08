@@ -33,6 +33,7 @@ globalThis.gameForce = 'player';
 
 console.time('loading');
 
+void async function (){
 
 await load_raw_game();
 
@@ -45,3 +46,5 @@ await recipe_prepare();
 await Selector.runTest();
 
 console.timeEnd('loading');
+
+}()
